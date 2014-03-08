@@ -1,7 +1,7 @@
 // Require the twilio and HTTP modules
 var twilio = require('twilio');
 
-app.get('/hello.txt', function(req, res){
+app.get('hi_there', function(req, res){
 
     var resp = new twilio.TwimlResponse();
 

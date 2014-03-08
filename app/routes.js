@@ -65,10 +65,10 @@ module.exports = function(app) {
 
     // application -------------------------------------------------------------
     app.get('/twilio', function(req, res) {
-        res.sendfile('./public/twilio.js'); // load the single view file (angular will handle the page changes on the front-end)
+        res.sendfile('./public/twilio.html'); // load the single view file (angular will handle the page changes on the front-end)
     });
 
-    app.get('*', function(req, res) {
+    app.get('/', function(req, res) {
         res.sendfile('./public/index.html'); // load the single view file (angular will handle the page changes on the front-end)
     });
 };
