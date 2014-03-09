@@ -7,11 +7,53 @@
  */
 
 var User = require('./models/user');
+var twilio = require('twilio');
 
-module.exports = function(app) {
+module.exports = function(app, passport) {
 
     // api ---------------------------------------------------------------------
     // get all todos
+    app.get('/', function(req, res) {
+        res.render('index.ejs'); // load the index.ejs file
+    });
+
+    app.get('/login', function(req, res) {
+
+        // render the page and pass in any flash data if it exists
+        res.render('login.ejs', { message: req.flash('loginMessage') });
+    });
+
+    app.get('/signup', function(req, res) {
+
+        // render the page and pass in any flash data if it exists
+        res.render('signup.ejs', { message: req.flash('signupMessage') });
+    });
+
+    app.get('/profile', isLoggedIn, function(req, res) {
+        res.render('profile.ejs', {
+            user : req.user // get the user out of session and pass to template
+        });
+    });
+
+    app.get('/logout', function(req, res) {
+        req.logout();
+        res.redirect('/');
+    });
+
+
+    // process the signup form
+    app.post('/signup', passport.authenticate('local-signup', {
+        successRedirect : '/profile', // redirect to the secure profile section
+        failureRedirect : '/signup', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+    }));
+
+    app.post('/login', passport.authenticate('local-login', {
+        successRedirect : '/profile', // redirect to the secure profile section
+        failureRedirect : '/login', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+    }));
+
     app.get('/api/usr', function(req, res) {
 
         // use mongoose to get all todos in the database
@@ -65,10 +107,39 @@ module.exports = function(app) {
 
     // application -------------------------------------------------------------
     app.get('/twilio', function(req, res) {
-        res.sendfile('./public/twilio.html'); // load the single view file (angular will handle the page changes on the front-end)
+        console.log("Hello: "+req.query.ToCountry);
+        console.log("Hello: "+req.query.Body);
+        var k =   req.query.Body.split("`") ;
+         console.log(k[0]);
+        console.log(k[1]);
+        console.log(k[2]);
+
+        //response
+        var resp = new twilio.TwimlResponse();
+
+        resp.message('Thanks, your message was received!');
+
+        //Render the TwiML document using "toString"
+        res.writeHead(200, {
+            'Content-Type':'text/xml'
+        });
+        res.end(resp.toString());
+
+        //res.sendfile('./public/twilio.html'); // load the single view file (angular will handle the page changes on the front-end)
     });
 
-    app.get('/', function(req, res) {
-        res.sendfile('./public/index.html'); // load the single view file (angular will handle the page changes on the front-end)
-    });
+//    app.get('/', function(req, res) {
+//
+//        res.sendfile('./public/index1.html'); // load the single view file (angular will handle the page changes on the front-end)
+//    });
 };
+
+function isLoggedIn(req, res, next) {
+
+    // if user is authenticated in the session, carry on
+    if (req.isAuthenticated())
+        return next();
+
+    // if they aren't redirect them to the home page
+    res.redirect('/');
+}
