@@ -8,6 +8,9 @@
 
 var User = require('./models/user');
 var twilio = require('twilio');
+var nodemailer = require("nodemailer");
+var configAuth = require('../config/auth');
+
 
 module.exports = function(app, passport) {
 
@@ -54,65 +57,58 @@ module.exports = function(app, passport) {
         failureFlash : true // allow flash messages
     }));
 
-    app.get('/api/usr', function(req, res) {
-
-        // use mongoose to get all todos in the database
-        User.find(function(err, usrs) {
-
-            // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-            if (err)
-                res.send(err)
-
-            res.json(usrs); // return all todos in JSON format
-        });
-    });
-
-    // create todo and send back all todos after creation
-    app.post('/api/usr', function(req, res) {
-
-        // create a todo, information comes from AJAX request from Angular
-        User.create({
-            text : req.body.text,
-            done : false
-        }, function(err, usrs) {
-            if (err)
-                res.send(err);
-
-            // get and return all the todos after you create another
-            Todo.find(function(err, usrs) {
-                if (err)
-                    res.send(err)
-                res.json(usrs);
-            });
-        });
-
-    });
-
-    // delete a todo
-    app.delete('/api/usr/:usr_id', function(req, res) {
-        User.remove({
-            _id : req.params.todo_id
-        }, function(err, todo) {
-            if (err)
-                res.send(err);
-
-            // get and return all the todos after you create another
-            User.find(function(err, todos) {
-                if (err)
-                    res.send(err)
-                res.json(todos);
-            });
-        });
-    });
-
     // application -------------------------------------------------------------
     app.get('/twilio', function(req, res) {
+
         console.log("Hello: "+req.query.ToCountry);
         console.log("Hello: "+req.query.Body);
         var k =   req.query.Body.split("`") ;
-         console.log(k[0]);
+        console.log(k[0]);
         console.log(k[1]);
         console.log(k[2]);
+
+        // Create a SMTP transport object
+        var transport = nodemailer.createTransport("SMTP", {
+            //service: 'Gmail', // use well known service.
+            // If you are using @gmail.com address, then you don't
+            // even have to define the service name
+            auth: {
+                user: configAuth.emailAuth.uname,
+                pass: configAuth.emailAuth.pwd
+            }
+        });
+
+        var message = {
+
+            // sender info
+            from: 'harshs08@gmail.com  ',
+
+            // Comma separated list of recipients
+            to: k[0],
+
+            // Subject of the message
+            subject: k[1], //
+
+            headers: {
+                'X-Laziness-level': 1000
+            },
+
+            // plaintext body
+            text: k[2]
+        };
+
+        console.log('Sending Mail');
+        transport.sendMail(message, function(error){
+            if(error){
+                console.log('Error occured');
+                console.log(error.message);
+                return;
+            }
+            console.log('Message sent successfully!');
+
+            // if you don't want to use this transport object anymore, uncomment following line
+            //transport.close(); // close the connection pool
+        });
 
         //response
         var resp = new twilio.TwimlResponse();
@@ -127,6 +123,15 @@ module.exports = function(app, passport) {
 
         //res.sendfile('./public/twilio.html'); // load the single view file (angular will handle the page changes on the front-end)
     });
+
+    app.get('/auth/google', passport.authenticate('google', { scope : ['profile', 'email'], accessType: 'offline', approvalPrompt: 'force' }));
+
+    // the callback after google has authenticated the user
+    app.get('/auth/google/callback',
+        passport.authenticate('google', {
+            successRedirect : '/profile',
+            failureRedirect : '/'
+        }));
 
 //    app.get('/', function(req, res) {
 //
