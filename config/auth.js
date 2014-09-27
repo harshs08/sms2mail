@@ -15,8 +15,8 @@ module.exports = {
     },
 
     'emailAuth' : {
-        'uname' 		: 'harshs08@gmail.com',
-        'pwd' 	: 'thegameisstart@1'
+        'uname' 		: '*****@*****.com',
+        'pwd' 	: '********'
     }
 
 };
